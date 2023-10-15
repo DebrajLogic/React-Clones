@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
+import { Header, SendMail, Sidebar, Login } from "./components";
+import { Outlet } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { selectSendMessageIsOpen } from "./features/mailSlice";
+import { selectUser } from "./features/userSlice";
+import { useEffect } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { login } from "./features/userSlice";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const sendMessageIsOpen = useSelector(selectSendMessageIsOpen);
+  const user = useSelector(selectUser);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        dispatch(
+          login({
+            displayName: user.displayName,
+            email: user.email,
+            photoUrl: user.photoUrl,
+          })
+        );
+      }
+    });
+  }, []);
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {user ? (
+        <Login />
+      ) : (
+        <div className="app">
+          <Header />
+          <div className="app__body">
+            <Sidebar />
+            <Outlet />
+          </div>
+
+          {sendMessageIsOpen && <SendMail />}
+        </div>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
